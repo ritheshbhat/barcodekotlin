@@ -8,23 +8,24 @@ import java.nio.charset.StandardCharsets
 
 
 fun main() {
+    val user_id= "1"
     val factory = ConnectionFactory()
-    factory.host = "localhost"
+    factory.host = "18.224.93.1"
     factory.port = 5672
     factory.username = "guest"
     factory.password = "guest"
     factory.virtualHost = "/"
     val connection = factory.newConnection()
-
-//    val connection = factory.newConnection("guest:guest@localhost:5672/")
     val channel = connection.createChannel()
     val consumerTag = "SimpleConsumer"
-    channel.exchangeDeclare("logs", BuiltinExchangeType.FANOUT)
+    channel.exchangeDeclare("public", BuiltinExchangeType.FANOUT)
+    channel.exchangeDeclare("user", BuiltinExchangeType.DIRECT)
+
     val queueResult = channel.queueDeclare("", false, true, true, null)
-    channel.queueBind(queueResult.queue, "logs", "")
+    channel.queueBind(queueResult.queue, "public", "")
+    channel.queueDeclare(user_id,false,true,true,null)
+    channel.queueBind(user_id,"user",user_id)
 
-
-    println("queue is ${queueResult.queue}")
 
 
     println("[$consumerTag] Waiting for messages...")
@@ -37,5 +38,7 @@ fun main() {
     }
 
     channel.basicConsume(queueResult.queue, false, consumerTag, deliverCallback, cancelCallback)
+    channel.basicConsume(user_id, false, "userTag", deliverCallback, cancelCallback)
+
 
 }
